@@ -1,0 +1,7 @@
+[
+    {
+        "directory": "/home/zengyong/compiler_homework/first/ast-interpreter/build",
+        "command": "/bin/c++   -I/usr/lib/llvm-10/include    -o CMakeFiles/ast-interpreter.dir/ASTInterpreter.cpp.o -c /home/zengyong/compiler_homework/first/ast-interpreter/ASTInterpreter.cpp",
+        "file": "/home/zengyong/compiler_homework/first/ast-interpreter/ASTInterpreter.cpp"
+    }
+]
