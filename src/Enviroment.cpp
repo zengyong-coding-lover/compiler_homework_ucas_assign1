@@ -158,9 +158,17 @@ Stmt *Environment::iff(IfStmt *ifstmt) {
     }
 }
 
+// 返回条件是否为真，相当于跳转指令
 bool Environment::_while_(WhileStmt *whilestmt) {
     mStack.back().setPC(whilestmt);
     Expr *cond = whilestmt->getCond();
+    int val = mStack.back().getStmtVal(cond);
+    return val != 0;
+}
+
+bool Environment::_for_(ForStmt *forstmt) {
+    mStack.back().setPC(forstmt);
+    Expr *cond = forstmt->getCond();
     int val = mStack.back().getStmtVal(cond);
     return val != 0;
 }

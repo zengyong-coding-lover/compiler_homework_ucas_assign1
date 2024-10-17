@@ -86,6 +86,18 @@ void InterpreterVisitor::VisitWhileStmt(WhileStmt *whilestmt) {
     }
 }
 
+void InterpreterVisitor::VisitForStmt(ForStmt *forstmt) {
+    Stmt *init = forstmt->getInit();
+    Expr *cond = forstmt->getCond();
+    Expr *inc = forstmt->getInc();
+    Stmt *body = forstmt->getBody();
+
+    _VisitStmt_(init);
+    _VisitExpr_(cond);
+    for (_VisitStmt_(init), _VisitExpr_(cond); mEnv->_for_(forstmt); _VisitStmt_(body), _VisitExpr_(inc), _VisitExpr_(cond))
+        ;
+}
+
 void InterpreterConsumer::HandleTranslationUnit(clang::ASTContext &Context) {
     TranslationUnitDecl *decl = Context.getTranslationUnitDecl();
     mEnv.init(decl);
