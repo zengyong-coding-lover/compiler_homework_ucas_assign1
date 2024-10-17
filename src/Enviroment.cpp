@@ -158,6 +158,13 @@ Stmt *Environment::iff(IfStmt *ifstmt) {
     }
 }
 
+bool Environment::_while_(WhileStmt *whilestmt) {
+    mStack.back().setPC(whilestmt);
+    Expr *cond = whilestmt->getCond();
+    int val = mStack.back().getStmtVal(cond);
+    return val != 0;
+}
+
 void Environment::call(CallExpr *callexpr) {
     mStack.back().setPC(callexpr);
     int val = 0;

@@ -80,11 +80,13 @@ public:
     //    Stmt
     // └── Expr
     //     └── DeclRefExpr
-    void declref(DeclRefExpr *declref) ;
+    void declref(DeclRefExpr *declref);
     void cast(CastExpr *castexpr);
 
     // 返回下一步执行stmt
     Stmt *iff(IfStmt *ifstmt);
+    // 返回是否继续执行
+    bool _while_(WhileStmt *whilestmt);
     /// !TODO Support Function Call
     void call(CallExpr *callexpr);
 

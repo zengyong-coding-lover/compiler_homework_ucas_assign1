@@ -1,4 +1,30 @@
 #include "ASTInterpreter.h"
+void InterpreterVisitor::_VisitExpr_(Expr *exp) {
+    if (BinaryOperator *bop = llvm::dyn_cast<BinaryOperator>(exp))
+        VisitBinaryOperator(bop);
+    else if (DeclRefExpr *declRef = llvm::dyn_cast<DeclRefExpr>(exp))
+        VisitDeclRefExpr(declRef);
+    else if (CallExpr *call = llvm::dyn_cast<CallExpr>(exp))
+        VisitCallExpr(call);
+    else if (CastExpr *cast = llvm::dyn_cast<CastExpr>(exp))
+        VisitCastExpr(cast);
+    else
+        // If it's an expression type that we haven't handled explicitly, visit it as a generic statement
+        VisitStmt(exp);
+}
+
+void InterpreterVisitor::_VisitStmt_(Stmt *stmt) {
+    if (ReturnStmt *retstmt = dyn_cast<ReturnStmt>(stmt))
+        VisitReturnStmt(retstmt);
+    else if (DeclStmt *declstmt = dyn_cast<DeclStmt>(stmt))
+        VisitDeclStmt(declstmt);
+    else if (IfStmt *ifstmt = dyn_cast<IfStmt>(stmt))
+        VisitIfStmt(ifstmt);
+    else if (WhileStmt *whilestmt = dyn_cast<WhileStmt>(stmt))
+        VisitWhileStmt(whilestmt);
+    else
+        VisitStmt(stmt);
+}
 
 void InterpreterVisitor::VisitIntegerLiteral(IntegerLiteral *int_literal) {
     mEnv->intliteral(int_literal);
@@ -41,29 +67,22 @@ void InterpreterVisitor::VisitDeclStmt(DeclStmt *declstmt) {
 }
 void InterpreterVisitor::VisitIfStmt(IfStmt *ifstmt) {
     Expr *cond = ifstmt->getCond();
-    if (BinaryOperator *bop = llvm::dyn_cast<BinaryOperator>(cond))
-        VisitBinaryOperator(bop);
-    else if (DeclRefExpr *declRef = llvm::dyn_cast<DeclRefExpr>(cond))
-        VisitDeclRefExpr(declRef);
-    else if (CallExpr *call = llvm::dyn_cast<CallExpr>(cond))
-        VisitCallExpr(call);
-    else if (CastExpr *cast = llvm::dyn_cast<CastExpr>(cond))
-        VisitCastExpr(cast);
-    else
-        // If it's an expression type that we haven't handled explicitly, visit it as a generic statement
-        VisitStmt(cond);
+    _VisitExpr_(cond);
 
     Stmt *next = mEnv->iff(ifstmt);
     // next->dump();
     if (next) {
-        if (ReturnStmt *retstmt = dyn_cast<ReturnStmt>(next))
-            VisitReturnStmt(retstmt);
-        else if (DeclStmt *declstmt = dyn_cast<DeclStmt>(next))
-            VisitDeclStmt(declstmt);
-        else if (IfStmt *ifstmt = dyn_cast<IfStmt>(next))
-            VisitIfStmt(ifstmt);
-        else
-            VisitStmt(next);
+        _VisitStmt_(next);
+    }
+}
+
+void InterpreterVisitor::VisitWhileStmt(WhileStmt *whilestmt) {
+    Expr *cond = whilestmt->getCond();
+    Stmt *body = whilestmt->getBody();
+    _VisitExpr_(cond);
+    while (mEnv->_while_(whilestmt)) {
+        _VisitStmt_(body);
+        _VisitExpr_(cond);
     }
 }
 

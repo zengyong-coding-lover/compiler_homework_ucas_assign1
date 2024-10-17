@@ -24,7 +24,11 @@ public:
     virtual void VisitReturnStmt(ReturnStmt *retstmt);
     virtual void VisitDeclStmt(DeclStmt *declstmt);
     virtual void VisitIfStmt(IfStmt *ifstmt);
+    virtual void VisitWhileStmt(WhileStmt *whilestmt);
 
+    void _VisitExpr_(Expr *exp);
+    void _VisitStmt_(Stmt *stmt);
+    
 private:
     Environment *mEnv;
 };
