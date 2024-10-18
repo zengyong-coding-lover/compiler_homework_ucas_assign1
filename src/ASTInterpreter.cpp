@@ -16,6 +16,7 @@ void InterpreterVisitor::_VisitExpr_(Expr *exp) {
 }
 
 void InterpreterVisitor::_VisitStmt_(Stmt *stmt) {
+    if (!stmt) return;
     if (Expr *exp = dyn_cast<Expr>(stmt)) {
         // stmt 可能是expr,主要解决 if () exp else exp / while / for 的这种情形
         _VisitExpr_(exp);
