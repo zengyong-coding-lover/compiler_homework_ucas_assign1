@@ -14,6 +14,7 @@ public:
         this->val = val;
     }
     Array(unsigned size, Array arr) {
+        is_element = false;
         for (int i = 0; i < size; i++)
             this->arr.push_back(arr);
     }
