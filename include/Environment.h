@@ -3,14 +3,14 @@
 #ifndef __Environment__
 #define __Environment__
 #include "Support.h"
-
+#include "Value.h"
 using namespace clang;
 
 class StackFrame {
     /// StackFrame maps Variable Declaration to Value
     /// Which are either integer or addresses (also represented using an Integer value)
-    std::map<Decl *, int> mVars;
-    std::map<Stmt *, int> mExprs;
+    std::map<Decl *, Varvalue> mVars;
+    std::map<Stmt *, Nodevalue> mExprs;
     /// The current stmt
     Stmt *mPC;
 
@@ -21,10 +21,10 @@ public:
         , mPC() {
     }
 
-    void bindDecl(Decl *decl, int val);
-    int getDeclVal(Decl *decl);
-    void bindStmt(Stmt *stmt, int val);
-    int getStmtVal(Stmt *stmt);
+    void bindDecl(Decl *decl, const Varvalue &val);
+    Varvalue &getDeclVal(Decl *decl);
+    void bindStmt(Stmt *stmt, Nodevalue val);
+    Nodevalue getStmtVal(Stmt *stmt);
     void setPC(Stmt *stmt);
     Stmt *getPC();
 };
@@ -43,9 +43,9 @@ public:
 class Environment {
     std::vector<StackFrame> mStack;
 
-    std::map<Decl *, int> mglobals;
+    std::map<Decl *, Varvalue> mglobals;
 
-    int ret_val;
+    Nodevalue ret_val;
 
     FunctionDecl *mFree; /// Declartions to the built-in functions
     FunctionDecl *mMalloc;
@@ -64,8 +64,8 @@ public:
         , mOutput(NULL)
         , mEntry(NULL) {
     }
-    void bind_globals(Decl *decl, int val);
-    int getDeclVal_global(Decl *decl);
+    void bind_globals(Decl *decl, const Varvalue &val);
+    Varvalue &getDeclVal_global(Decl *decl);
     /// Initialize the Environment
     void init(TranslationUnitDecl *unit);
 

@@ -1,19 +1,19 @@
 #include "Environment.h"
 
-void StackFrame::bindDecl(Decl *decl, int val) {
+void StackFrame::bindDecl(Decl *decl, const Varvalue &val) {
     mVars[decl] = val;
 }
 
-int StackFrame::getDeclVal(Decl *decl) {
+Varvalue &StackFrame::getDeclVal(Decl *decl) {
     assert(mVars.find(decl) != mVars.end());
     return mVars.find(decl)->second;
 }
 
-void StackFrame::bindStmt(Stmt *stmt, int val) {
+void StackFrame::bindStmt(Stmt *stmt, Nodevalue val) {
     mExprs[stmt] = val;
 }
 
-int StackFrame::getStmtVal(Stmt *stmt) {
+Nodevalue StackFrame::getStmtVal(Stmt *stmt) {
     assert(mExprs.find(stmt) != mExprs.end());
     return mExprs[stmt];
 }
@@ -26,11 +26,11 @@ Stmt *StackFrame::getPC() {
     return mPC;
 }
 
-void Environment::bind_globals(Decl *decl, int val) {
+void Environment::bind_globals(Decl *decl, const Varvalue &val) {
     mglobals[decl] = val;
 }
 
-int Environment::getDeclVal_global(Decl *decl) {
+Varvalue &Environment::getDeclVal_global(Decl *decl) {
     assert(mglobals.find(decl) != mglobals.end());
     return mglobals[decl];
 }
@@ -52,10 +52,10 @@ void Environment::init(TranslationUnitDecl *unit) {
         if (VarDecl *vdecl = dyn_cast<VarDecl>(*i)) {
             if (Expr *initExpr = vdecl->getInit()) {
                 int val = caluate_exp(initExpr);
-                bind_globals(vdecl, val);
+                bind_globals(vdecl, Varvalue(val));
             }
             else
-                bind_globals(vdecl, 0);
+                bind_globals(vdecl, Varvalue(0));
         }
     }
     mStack.push_back(StackFrame());
@@ -67,7 +67,7 @@ FunctionDecl *Environment::getEntry() {
 
 void Environment::intliteral(IntegerLiteral *int_liter) {
     int val = int_liter->getValue().getSExtValue();
-    mStack.back().bindStmt(int_liter, val);
+    mStack.back().bindStmt(int_liter, Nodevalue(val));
 }
 
 void Environment::binop(BinaryOperator *bop) {
@@ -75,29 +75,34 @@ void Environment::binop(BinaryOperator *bop) {
     Expr *right = bop->getRHS();
 
     if (bop->isAssignmentOp()) {
-        int val = mStack.back().getStmtVal(right);
-        mStack.back().bindStmt(left, val); // 更新左值, 个人觉得应该是更新bop才对，但源代码这样写
-        if (DeclRefExpr *declexpr = dyn_cast<DeclRefExpr>(left)) { // 如果左值是变量的引用，更新这个引用
-            Decl *decl = declexpr->getFoundDecl();
-            if (is_global_var(decl))
-                bind_globals(decl, val);
-            else
-                mStack.back().bindDecl(decl, val);
-        }
+        Nodevalue rval = mStack.back().getStmtVal(right);
+        Nodevalue lval = mStack.back().getStmtVal(left);
+        // assert(val.is_lval());
+        // set_lval();
+        lval.set_lval(rval);
+        // mStack.back().bindStmt(left, val); // 更新左值, 个人觉得应该是更新bop才对，但源代码这样写
+        // if (DeclRefExpr *declexpr = dyn_cast<DeclRefExpr>(left)) { // 如果左值是变量的引用，更新这个引用
+        //     Decl *decl = declexpr->getFoundDecl();
+        //     if (is_global_var(decl))
+        //         bind_globals(decl, val);
+        //     else
+        //         mStack.back().bindDecl(decl, val);
+        // }
+        
         return;
     }
 
-    int val1 = mStack.back().getStmtVal(left);
-    int val2 = mStack.back().getStmtVal(right);
-    int re = cal_binary(val1, val2, bop->getOpcode());
-    mStack.back().bindStmt(bop, re);
+    Nodevalue val1 = mStack.back().getStmtVal(left);
+    Nodevalue val2 = mStack.back().getStmtVal(right);
+    int re = cal_binary(val1.get_val(), val2.get_val(), bop->getOpcode());
+    mStack.back().bindStmt(bop, Nodevalue(re));
 }
 
 void Environment::unop(UnaryOperator *uop) {
     Expr *exp = uop->getSubExpr();
-    int val = mStack.back().getStmtVal(exp);
-    int re = cal_unary(val, uop->getOpcode());
-    mStack.back().bindStmt(uop, re);
+    Nodevalue val = mStack.back().getStmtVal(exp);
+    int re = cal_unary(val.get_val(), uop->getOpcode());
+    mStack.back().bindStmt(uop, Nodevalue(re));
 }
 
 void Environment::decl(DeclStmt *declstmt) {
@@ -106,15 +111,11 @@ void Environment::decl(DeclStmt *declstmt) {
         Decl *decl = *it;
         if (VarDecl *vardecl = dyn_cast<VarDecl>(decl)) {
             if (Expr *initExpr = vardecl->getInit()) {
-                // Expr::EvalResult result;
-                // assert(initExpr->EvaluateAsRValue(result, ConstExprUsage Usage, const ASTContext &Ctx))
-                // initExpr->dump();
-                // assert(initExpr->)
-                int val = mStack.back().getStmtVal(initExpr);
-                mStack.back().bindDecl(vardecl, val);
+                Nodevalue val = mStack.back().getStmtVal(initExpr);
+                mStack.back().bindDecl(vardecl, Varvalue(val));
             }
             else
-                mStack.back().bindDecl(vardecl, 0);
+                mStack.back().bindDecl(vardecl, Varvalue(0));
         }
     }
 }
@@ -124,12 +125,10 @@ void Environment::declref(DeclRefExpr *declref) { // DeclRefExpr是对变量的�
     if (declref->getType()->isIntegerType()) {
         Decl *decl = declref->getFoundDecl();
         // decl->dump();
-        int val;
         if (is_global_var(decl))
-            val = getDeclVal_global(decl);
+            mStack.back().bindStmt(declref, Nodevalue(getDeclVal_global(decl)));
         else
-            val = mStack.back().getDeclVal(decl);
-        mStack.back().bindStmt(declref, val);
+            mStack.back().bindStmt(declref, Nodevalue(mStack.back().getDeclVal(decl)));
     }
 }
 
@@ -137,7 +136,7 @@ void Environment::cast(CastExpr *castexpr) {
     mStack.back().setPC(castexpr);
     if (castexpr->getType()->isIntegerType()) {
         Expr *expr = castexpr->getSubExpr();
-        int val = mStack.back().getStmtVal(expr);
+        Nodevalue val = mStack.back().getStmtVal(expr);
         mStack.back().bindStmt(castexpr, val);
     }
 }
@@ -147,7 +146,7 @@ Stmt *Environment::iff(IfStmt *ifstmt) {
     Expr *cond = ifstmt->getCond();
     Stmt *then = ifstmt->getThen();
     Stmt *elif = ifstmt->getElse();
-    int val = mStack.back().getStmtVal(cond);
+    Nodevalue val = mStack.back().getStmtVal(cond);
     if (val) {
         return then;
     }
@@ -162,31 +161,46 @@ Stmt *Environment::iff(IfStmt *ifstmt) {
 bool Environment::_while_(WhileStmt *whilestmt) {
     mStack.back().setPC(whilestmt);
     Expr *cond = whilestmt->getCond();
-    int val = mStack.back().getStmtVal(cond);
-    return val != 0;
+    Nodevalue val = mStack.back().getStmtVal(cond);
+    return val;
 }
 
 bool Environment::_for_(ForStmt *forstmt) {
     mStack.back().setPC(forstmt);
     Expr *cond = forstmt->getCond();
-    int val = mStack.back().getStmtVal(cond);
-    return val != 0;
+    Nodevalue val = mStack.back().getStmtVal(cond);
+    return val;
+}
+
+// 递归查找数组定义的 Decl
+Decl *findArrayDecl(Expr *expr) {
+    expr = expr->IgnoreParenImpCasts(); // 忽略括号和隐式转换
+
+    if (clang::ArraySubscriptExpr *arrayExpr = llvm::dyn_cast<clang::ArraySubscriptExpr>(expr)) {
+        // 如果 Base 是另一个数组访问，递归处理
+        return findArrayDecl(arrayExpr->getBase());
+    }
+
+    if (DeclRefExpr *declRefExpr = llvm::dyn_cast<clang::DeclRefExpr>(expr)) {
+        // 找到 DeclRefExpr，返回对应的 Decl
+        return declRefExpr->getFoundDecl();
+    }
+    return nullptr; // 没有找到 Decl
 }
 
 void Environment::call(CallExpr *callexpr) {
     mStack.back().setPC(callexpr);
-    int val = 0;
     FunctionDecl *callee = callexpr->getDirectCallee();
     if (callee == mInput) {
         llvm::errs() << "Please Input an Integer Value : ";
-        scanf("%d", &val);
-
-        mStack.back().bindStmt(callexpr, val);
+        int input;
+        scanf("%d", &input);
+        mStack.back().bindStmt(callexpr, Nodevalue(input));
     }
     else if (callee == mOutput) {
         Expr *decl = callexpr->getArg(0);
-        val = mStack.back().getStmtVal(decl);
-        llvm::errs() << val;
+        Nodevalue val = mStack.back().getStmtVal(decl);
+        llvm::errs() << val.get_val();
     }
     else {
         /// You could add your code here for Function call Return
@@ -204,9 +218,10 @@ void Environment::call(CallExpr *callexpr) {
 
         for (unsigned i = 0; i < numArgs; i++) {
             Expr *arg = callexpr->getArg(i);
-            val = mStack[current_frame_index].getStmtVal(arg);
+            Nodevalue val = mStack[current_frame_index].getStmtVal(arg);
 
-            mStack.back().bindDecl(params[i], val);
+            assert(!val.get_is_pointer());
+            mStack.back().bindDecl(params[i], Varvalue(val));
         }
     }
 }

@@ -25,11 +25,10 @@ public:
     virtual void VisitDeclStmt(DeclStmt *declstmt);
     virtual void VisitIfStmt(IfStmt *ifstmt);
     virtual void VisitWhileStmt(WhileStmt *whilestmt);
-    virtual void VisitForStmt(ForStmt* forstmt);
-
+    virtual void VisitForStmt(ForStmt *forstmt);
     void _VisitExpr_(Expr *exp);
     void _VisitStmt_(Stmt *stmt);
-    
+
 private:
     Environment *mEnv;
 };
