@@ -8,6 +8,8 @@ void InterpreterVisitor::_VisitExpr_(Expr *exp) {
         VisitCallExpr(call);
     else if (CastExpr *cast = llvm::dyn_cast<CastExpr>(exp))
         VisitCastExpr(cast);
+    else if (ArraySubscriptExpr *array = llvm::dyn_cast<ArraySubscriptExpr>(exp))
+        VisitArraySubscriptExpr(array);
     else
         // If it's an expression type that we haven't handled explicitly, visit it as a generic statement
         VisitStmt(exp);
@@ -99,6 +101,11 @@ void InterpreterVisitor::VisitForStmt(ForStmt *forstmt) {
 
     for (_VisitStmt_(init), _VisitExpr_(cond); mEnv->_for_(forstmt); _VisitStmt_(body), _VisitExpr_(inc), _VisitExpr_(cond))
         ;
+}
+
+void InterpreterVisitor::VisitArraySubscriptExpr(ArraySubscriptExpr *array) {
+    VisitStmt(array);
+    mEnv->array(array);
 }
 
 void InterpreterConsumer::HandleTranslationUnit(clang::ASTContext &Context) {

@@ -19,6 +19,7 @@ public:
     }
     bool get_is_element();
     int get_value();
+    int &get_lvalue();
     Array &operator[](int index);
     void operator=(int val);
 };

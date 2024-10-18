@@ -88,6 +88,8 @@ public:
     // 返回是否继续执行
     bool _while_(WhileStmt *whilestmt);
     bool _for_(ForStmt *forstmt);
+
+    void array(ArraySubscriptExpr *arr);
     /// !TODO Support Function Call
     void call(CallExpr *callexpr);
 

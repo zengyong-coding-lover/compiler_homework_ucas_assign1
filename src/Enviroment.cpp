@@ -77,18 +77,8 @@ void Environment::binop(BinaryOperator *bop) {
     if (bop->isAssignmentOp()) {
         Nodevalue rval = mStack.back().getStmtVal(right);
         Nodevalue lval = mStack.back().getStmtVal(left);
-        // assert(val.is_lval());
-        // set_lval();
         lval.set_lval(rval);
-        // mStack.back().bindStmt(left, val); // 更新左值, 个人觉得应该是更新bop才对，但源代码这样写
-        // if (DeclRefExpr *declexpr = dyn_cast<DeclRefExpr>(left)) { // 如果左值是变量的引用，更新这个引用
-        //     Decl *decl = declexpr->getFoundDecl();
-        //     if (is_global_var(decl))
-        //         bind_globals(decl, val);
-        //     else
-        //         mStack.back().bindDecl(decl, val);
-        // }
-        
+
         return;
     }
 
@@ -105,11 +95,24 @@ void Environment::unop(UnaryOperator *uop) {
     mStack.back().bindStmt(uop, Nodevalue(re));
 }
 
+static Array InitArr(const clang::ArrayType *arrType) {
+    if (!arrType)
+        return Array(0);
+    const clang::ConstantArrayType *constArr = llvm::dyn_cast<clang::ConstantArrayType>(arrType);
+    unsigned size = constArr->getSize().getZExtValue();
+    const clang::ArrayType *nextArrType = constArr->getElementType()->getAsArrayTypeUnsafe();
+    return Array(size, InitArr(nextArrType));
+}
 void Environment::decl(DeclStmt *declstmt) {
     for (DeclStmt::decl_iterator it = declstmt->decl_begin(), ie = declstmt->decl_end();
          it != ie; ++it) {
         Decl *decl = *it;
         if (VarDecl *vardecl = dyn_cast<VarDecl>(decl)) {
+            if (const clang::ArrayType *arrType = vardecl->getType()->getAsArrayTypeUnsafe()) {
+                Array arr = InitArr(arrType);
+                mStack.back().bindDecl(vardecl, Varvalue(arr));
+                continue;
+            }
             if (Expr *initExpr = vardecl->getInit()) {
                 Nodevalue val = mStack.back().getStmtVal(initExpr);
                 mStack.back().bindDecl(vardecl, Varvalue(val));
@@ -124,7 +127,15 @@ void Environment::declref(DeclRefExpr *declref) { // DeclRefExpr是对变量的�
     mStack.back().setPC(declref);
     if (declref->getType()->isIntegerType()) {
         Decl *decl = declref->getFoundDecl();
-        // decl->dump();
+        if (is_global_var(decl))
+            mStack.back().bindStmt(declref, Nodevalue(getDeclVal_global(decl)));
+        else
+            mStack.back().bindStmt(declref, Nodevalue(mStack.back().getDeclVal(decl)));
+        return;
+    }
+    if (declref->getType()->isFunctionProtoType()) return;
+    if (declref->getType()->isArrayType()) {
+        Decl *decl = declref->getFoundDecl();
         if (is_global_var(decl))
             mStack.back().bindStmt(declref, Nodevalue(getDeclVal_global(decl)));
         else
@@ -136,6 +147,13 @@ void Environment::cast(CastExpr *castexpr) {
     mStack.back().setPC(castexpr);
     if (castexpr->getType()->isIntegerType()) {
         Expr *expr = castexpr->getSubExpr();
+        Nodevalue val = mStack.back().getStmtVal(expr);
+        mStack.back().bindStmt(castexpr, val);
+        return;
+    }
+    if (castexpr->getType()->isPointerType()) { // 不知道怎么表示数组类型，只用了指针指向数组的位置
+        Expr *expr = castexpr->getSubExpr();
+        if (expr->getType()->isFunctionProtoType()) return;
         Nodevalue val = mStack.back().getStmtVal(expr);
         mStack.back().bindStmt(castexpr, val);
     }
@@ -172,22 +190,24 @@ bool Environment::_for_(ForStmt *forstmt) {
     return val;
 }
 
-// 递归查找数组定义的 Decl
-Decl *findArrayDecl(Expr *expr) {
-    expr = expr->IgnoreParenImpCasts(); // 忽略括号和隐式转换
-
-    if (clang::ArraySubscriptExpr *arrayExpr = llvm::dyn_cast<clang::ArraySubscriptExpr>(expr)) {
-        // 如果 Base 是另一个数组访问，递归处理
-        return findArrayDecl(arrayExpr->getBase());
+void Environment::array(ArraySubscriptExpr *arr) {
+    mStack.back().setPC(arr);
+    Expr *astbase = arr->getBase();
+    Expr *astindex = arr->getIdx();
+    Nodevalue nodebase = mStack.back().getStmtVal(astbase);
+    Nodevalue nodeindex = mStack.back().getStmtVal(astindex);
+    Array *arrbase = nodebase.get_pointer().get_array_pointer();
+    unsigned index = nodeindex.get_val();
+    Array *arrnow = &((*arrbase)[index]);
+    if (arrnow->get_is_element()) { // 索引到最后一个变成左值
+        Nodevalue nodenow = Nodevalue(arrnow->get_value());
+        nodenow.set_lval_source(Pointer(&arrnow->get_lvalue()));
+        mStack.back().bindStmt(arr, nodenow);
     }
-
-    if (DeclRefExpr *declRefExpr = llvm::dyn_cast<clang::DeclRefExpr>(expr)) {
-        // 找到 DeclRefExpr，返回对应的 Decl
-        return declRefExpr->getFoundDecl();
+    else {
+        mStack.back().bindStmt(arr, Nodevalue(arrnow));
     }
-    return nullptr; // 没有找到 Decl
 }
-
 void Environment::call(CallExpr *callexpr) {
     mStack.back().setPC(callexpr);
     FunctionDecl *callee = callexpr->getDirectCallee();

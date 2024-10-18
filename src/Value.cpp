@@ -15,6 +15,11 @@ int Array::get_value() {
     return val;
 }
 
+int &Array::get_lvalue() {
+    assert(is_element);
+    return val;
+}
+
 void Array::operator=(int val) {
     assert(is_element);
     this->val = val;
@@ -103,7 +108,7 @@ Nodevalue::Nodevalue(Varvalue &varvalue) {
         return;
     }
     if (varvalue.is_arr_type()) {
-        set_pointer(Pointer(&varvalue.get_arr()[0]));
+        set_pointer(Pointer(&varvalue.get_arr()));
         return;
     }
 }

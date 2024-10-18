@@ -26,6 +26,7 @@ public:
     virtual void VisitIfStmt(IfStmt *ifstmt);
     virtual void VisitWhileStmt(WhileStmt *whilestmt);
     virtual void VisitForStmt(ForStmt *forstmt);
+    virtual void VisitArraySubscriptExpr(ArraySubscriptExpr *array);
     void _VisitExpr_(Expr *exp);
     void _VisitStmt_(Stmt *stmt);
 
