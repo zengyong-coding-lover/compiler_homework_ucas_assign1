@@ -97,8 +97,6 @@ void InterpreterVisitor::VisitForStmt(ForStmt *forstmt) {
     Expr *inc = forstmt->getInc();
     Stmt *body = forstmt->getBody();
 
-    _VisitStmt_(init);
-    _VisitExpr_(cond);
     for (_VisitStmt_(init), _VisitExpr_(cond); mEnv->_for_(forstmt); _VisitStmt_(body), _VisitExpr_(inc), _VisitExpr_(cond))
         ;
 }
