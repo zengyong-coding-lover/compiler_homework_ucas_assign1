@@ -9,6 +9,8 @@
 				"../",
 				"-DCMAKE_BUILD_TYPE=Debug",
 				"-DLLVM_DIR=/usr/lib/llvm10",
+				"-DClang_DIR=/usr/lib/cmake/clang-10",
+				"-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
 			],
 			"options": {
 				"cwd": "/home/zengyong/compiler_homework/first/ast-interpreter/build"

@@ -7,8 +7,7 @@
             "request": "launch",
             "program": "/home/zengyong/compiler_homework/first/ast-interpreter/build/ast-interpreter",
             "args": [
-                //"extern int GET();extern void * MALLOC(int);extern void FREE(void *);extern void PRINT(int);int main() {int a;a=100;PRINT(a);}",
-                "`cat test/test03.c`"
+                "`cat ../test/test15.c`"
             ],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
