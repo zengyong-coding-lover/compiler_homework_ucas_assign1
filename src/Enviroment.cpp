@@ -226,6 +226,7 @@ void Environment::call(CallExpr *callexpr) {
         /// You could add your code here for Function call Return
         // 准备参数
         unsigned current_frame_index = mStack.size() - 1;
+        ret_val.set_val(0);
         mStack.push_back(StackFrame());
 
         //push_back可能重新分配内存，这时候StackFrame和原来不一样，不能记录绝对地址
@@ -251,12 +252,17 @@ void Environment::ret(ReturnStmt *retstmt) {
     Expr *expr = retstmt->getRetValue();
 
     ret_val = mStack.back().getStmtVal(expr);
+    mStack.pop_back();
 }
 
 void Environment::finish_call(CallExpr *callexpr) {
     FunctionDecl *callee = callexpr->getDirectCallee();
     if (callee == mInput) return;
     if (callee == mOutput) return;
-    mStack.pop_back();
+    if (callee == mFree) return;
+    if (callee == mMalloc) return;
+    if (callee->getReturnType()->isVoidType())
+        return;
     mStack.back().bindStmt(callexpr, ret_val);
 }
+
