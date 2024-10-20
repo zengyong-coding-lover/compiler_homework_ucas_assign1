@@ -276,8 +276,14 @@ void Environment::cstylecast(CStyleCastExpr *expr) {
         ref_level++;
         Ty = Ty->getPointeeType().getTypePtr();
     }
-    assert(ref_level > 0);
+    // assert(ref_level > 0);
+
     Expr *subexpr = expr->getSubExpr();
+    if (ref_level == 0) {
+        // 只出现在 char->int
+        mStack.back().bindStmt(expr, mStack.back().getStmtVal(subexpr));
+        return;
+    }
     Pointer pointer = mStack.back().getStmtVal(subexpr).get_pointer();
     Pointer new_pointer;
     if (ref_level == 1) {
@@ -391,7 +397,7 @@ void Environment::call(CallExpr *callexpr) {
             Expr *arg = callexpr->getArg(i);
             Nodevalue val = mStack[current_frame_index].getStmtVal(arg);
 
-            assert(!val.get_is_pointer());
+            // assert(!val.get_is_pointer());
             mStack.back().bindDecl(params[i], Varvalue(val));
         }
     }

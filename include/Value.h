@@ -165,9 +165,15 @@ public:
     //     if (type == Array_Type)
     //         arr.resize(val_size);
     // }
-    Varvalue(Nodevalue val) // 先默认从Nodevalue到Varvalue 之后有整型转换
-        : type(Var_Basic_Value)
-        , val(val.get_val()) {
+    Varvalue(Nodevalue val) {
+        if (val.get_is_pointer()) {
+            type = Var_Pointer;
+            pointer = val.get_pointer();
+        }
+        else {
+            type = Var_Basic_Value;
+            this->val = val.get_val();
+        }
     }
     Varvalue(int val)
         : type(Var_Basic_Value)

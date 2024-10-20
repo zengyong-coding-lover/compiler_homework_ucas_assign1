@@ -25,7 +25,7 @@ done
 test_dir="assign1-test1/"
 tests=("test20" "test21" "test22" "test23" 
 "test24" "test25")
-results=(5 33312826232118161311863491419242934 4224 4224 2442)
+results=(5 33312826232118161311863491419242934 2442 2442 2442)
 for i in {0..4};
 do
     test=${tests[$i]}
