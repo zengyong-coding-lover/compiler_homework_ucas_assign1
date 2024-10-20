@@ -15,23 +15,27 @@ public:
     virtual ~InterpreterVisitor() {
     }
 
-    virtual void VisitIntegerLiteral(IntegerLiteral *int_literal);
-    virtual void VisitBinaryOperator(BinaryOperator *bop);
-    virtual void VisitUnaryOperator(UnaryOperator *uop);
-    virtual void VisitDeclRefExpr(DeclRefExpr *expr);
-    virtual void VisitCastExpr(CastExpr *expr);
-    virtual void VisitCallExpr(CallExpr *call);
-    virtual void VisitCStyleCastExpr(CStyleCastExpr *expr);
-    virtual void VisitUnaryExprOrTypeTraitExpr(UnaryExprOrTypeTraitExpr *expr);
-    virtual void VisitParenExpr(ParenExpr *parent);
-    virtual void VisitReturnStmt(ReturnStmt *retstmt);
-    virtual void VisitDeclStmt(DeclStmt *declstmt);
-    virtual void VisitIfStmt(IfStmt *ifstmt);
-    virtual void VisitWhileStmt(WhileStmt *whilestmt);
-    virtual void VisitForStmt(ForStmt *forstmt);
-    virtual void VisitArraySubscriptExpr(ArraySubscriptExpr *array);
-    void _VisitExpr_(Expr *exp);
-    void _VisitStmt_(Stmt *stmt);
+    virtual bool VisitIntegerLiteral(IntegerLiteral *int_literal);
+    virtual bool VisitBinaryOperator(BinaryOperator *bop);
+    virtual bool VisitUnaryOperator(UnaryOperator *uop);
+    virtual bool VisitDeclRefExpr(DeclRefExpr *expr);
+    virtual bool VisitCastExpr(CastExpr *expr);
+    virtual bool VisitCallExpr(CallExpr *call);
+    virtual bool VisitCStyleCastExpr(CStyleCastExpr *expr);
+    virtual bool VisitUnaryExprOrTypeTraitExpr(UnaryExprOrTypeTraitExpr *expr);
+    virtual bool VisitParenExpr(ParenExpr *parent);
+    virtual bool VisitReturnStmt(ReturnStmt *retstmt);
+    virtual bool VisitDeclStmt(DeclStmt *declstmt);
+    virtual bool VisitIfStmt(IfStmt *ifstmt);
+    virtual bool VisitWhileStmt(WhileStmt *whilestmt);
+    virtual bool VisitForStmt(ForStmt *forstmt);
+    virtual bool VisitArraySubscriptExpr(ArraySubscriptExpr *array);
+    virtual bool VisitStmt(Stmt *stmt);
+    virtual bool VisitVarDecl(VarDecl *vardecl) {
+        return true;
+    }
+    bool _VisitExpr_(Expr *exp);
+    bool _VisitStmt_(Stmt *stmt);
 
 private:
     Environment *mEnv;
