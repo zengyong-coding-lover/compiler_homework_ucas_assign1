@@ -133,7 +133,7 @@ void Pointer::set_void_pointer(void *voi) {
     this->voi = voi;
 }
 void Pointer::set_ref_level(unsigned ref_level) {
-    assert(pointer_type == Basic_Value_Pointer);
+    // assert(pointer_type == Basic_Value_Pointer);
     this->ref_level = ref_level;
 }
 Nodevalue::Nodevalue(Varvalue &varvalue) {

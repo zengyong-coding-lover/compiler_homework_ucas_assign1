@@ -243,7 +243,11 @@ void Environment::cstylecast(CStyleCastExpr *expr) {
     assert(ref_level > 0);
     Expr *subexpr = expr->getSubExpr();
     Pointer pointer = mStack.back().getStmtVal(subexpr).get_pointer();
-    Pointer new_pointer = Pointer((int*)pointer.get_void_pointer());
+    Pointer new_pointer;
+    if (ref_level == 1)
+        new_pointer = Pointer((int *) pointer.get_void_pointer());
+    else
+        new_pointer = Pointer((Pointer *) pointer.get_void_pointer());
     new_pointer.set_ref_level(ref_level);
     mStack.back().bindStmt(expr, Nodevalue(new_pointer));
 }
