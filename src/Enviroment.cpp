@@ -84,6 +84,29 @@ void Environment::binop(BinaryOperator *bop) {
 
     Nodevalue val1 = mStack.back().getStmtVal(left);
     Nodevalue val2 = mStack.back().getStmtVal(right);
+    if (val1.get_is_pointer() || val2.get_is_pointer()) {
+        Pointer pointer;
+        int offset;
+        if (val1.get_is_pointer()) {
+            pointer = val1.get_pointer();
+            offset = val2.get_val();
+        }
+        else {
+            pointer = val2.get_pointer();
+            offset = val1.get_val();
+        }
+        assert(!pointer.is_array_pointer());
+        assert(!pointer.is_void_pointer());
+        Pointer re;
+        if (pointer.is_basic_val_pointer()) {
+            re = Pointer(pointer.get_basic_value_pointer() + offset);
+        }
+        else {
+            re = Pointer(pointer.get_pointer_pointer() + offset);
+        }
+        mStack.back().bindStmt(bop, Nodevalue(re));
+        return;
+    }
     int re = cal_binary(val1.get_val(), val2.get_val(), bop->getOpcode());
     mStack.back().bindStmt(bop, Nodevalue(re));
 }
@@ -134,6 +157,14 @@ static Pointer InitPointer(VarDecl *decl) {
     else
         return Pointer(Pointer_Pointer, ref_level);
 }
+
+void Environment::paren(ParenExpr *parent) {
+    mStack.back().setPC(parent);
+    Expr *subExpr = parent->getSubExpr();
+    Nodevalue nodeval = mStack.back().getStmtVal(subExpr);
+    mStack.back().bindStmt(parent, nodeval);
+}
+
 void Environment::decl(DeclStmt *declstmt) {
     for (DeclStmt::decl_iterator it = declstmt->decl_begin(), ie = declstmt->decl_end();
          it != ie; ++it) {
@@ -244,10 +275,26 @@ void Environment::cstylecast(CStyleCastExpr *expr) {
     Expr *subexpr = expr->getSubExpr();
     Pointer pointer = mStack.back().getStmtVal(subexpr).get_pointer();
     Pointer new_pointer;
-    if (ref_level == 1)
-        new_pointer = Pointer((int *) pointer.get_void_pointer());
-    else
-        new_pointer = Pointer((Pointer *) pointer.get_void_pointer());
+    if (ref_level == 1) {
+        assert(!pointer.is_array_pointer());
+        // assert(!pointer.is_pointer_pointer());
+        if (pointer.is_pointer_pointer()) // unsafe
+            new_pointer = Pointer((int *) pointer.is_pointer_pointer());
+        if (pointer.is_void_pointer())
+            new_pointer = Pointer((int *) pointer.get_void_pointer());
+        else
+            new_pointer = pointer;
+    }
+    else {
+        assert(!pointer.is_array_pointer());
+        // assert(!pointer.is_basic_val_pointer());
+        if (pointer.is_basic_val_pointer()) // unsafe
+            new_pointer = Pointer((Pointer *) pointer.get_basic_value_pointer());
+        if (pointer.is_void_pointer())
+            new_pointer = Pointer((Pointer *) pointer.get_void_pointer());
+        else
+            new_pointer = pointer;
+    }
     new_pointer.set_ref_level(ref_level);
     mStack.back().bindStmt(expr, Nodevalue(new_pointer));
 }

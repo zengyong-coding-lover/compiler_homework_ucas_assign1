@@ -62,6 +62,11 @@ void InterpreterVisitor::VisitUnaryExprOrTypeTraitExpr(UnaryExprOrTypeTraitExpr 
     VisitStmt(expr);
     mEnv->unary_trait(expr);
 }
+void InterpreterVisitor::VisitParenExpr(ParenExpr *parent) {
+    VisitStmt(parent);
+    mEnv->paren(parent);
+}
+
 void InterpreterVisitor::VisitCallExpr(CallExpr *call) {
     VisitStmt(call);
     mEnv->call(call);

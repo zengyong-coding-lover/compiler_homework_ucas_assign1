@@ -76,6 +76,7 @@ public:
     void binop(BinaryOperator *bop);
     void unop(UnaryOperator *uop);
     void decl(DeclStmt *declstmt);
+    void paren(ParenExpr *parent);
     // 继承关系：
     //    Stmt
     // └── Expr
