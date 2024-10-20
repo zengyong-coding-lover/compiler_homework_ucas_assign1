@@ -91,6 +91,23 @@ void Environment::binop(BinaryOperator *bop) {
 void Environment::unop(UnaryOperator *uop) {
     Expr *exp = uop->getSubExpr();
     Nodevalue val = mStack.back().getStmtVal(exp);
+    if (uop->getOpcode() == clang::UO_Deref) {
+        Pointer pointer = val.get_pointer();
+        assert(!pointer.is_array_pointer());
+        assert(!pointer.is_void_pointer());
+        Nodevalue nodeval;
+        if (pointer.is_basic_val_pointer()) {
+            int val = *(pointer.get_basic_value_pointer());
+            nodeval.set_val(val);
+        }
+        if (pointer.is_pointer_pointer()) {
+            Pointer new_pointer = *(pointer.get_pointer_pointer());
+            nodeval.set_pointer(new_pointer);
+        }
+        nodeval.set_lval_source(pointer);
+        mStack.back().bindStmt(uop, nodeval);
+        return;
+    }
     int re = cal_unary(val.get_val(), uop->getOpcode());
     mStack.back().bindStmt(uop, Nodevalue(re));
 }
@@ -103,6 +120,20 @@ static Array InitArr(const clang::ArrayType *arrType) {
     const clang::ArrayType *nextArrType = constArr->getElementType()->getAsArrayTypeUnsafe();
     return Array(size, InitArr(nextArrType));
 }
+
+static Pointer InitPointer(VarDecl *decl) {
+    const Type *Ty = decl->getType().getTypePtr();
+
+    unsigned ref_level = 0;
+    while (Ty->isPointerType()) {
+        ref_level++;
+        Ty = Ty->getPointeeType().getTypePtr();
+    }
+    if (ref_level == 1)
+        return Pointer(Basic_Value_Pointer, ref_level);
+    else
+        return Pointer(Pointer_Pointer, ref_level);
+}
 void Environment::decl(DeclStmt *declstmt) {
     for (DeclStmt::decl_iterator it = declstmt->decl_begin(), ie = declstmt->decl_end();
          it != ie; ++it) {
@@ -111,6 +142,11 @@ void Environment::decl(DeclStmt *declstmt) {
             if (const clang::ArrayType *arrType = vardecl->getType()->getAsArrayTypeUnsafe()) {
                 Array arr = InitArr(arrType);
                 mStack.back().bindDecl(vardecl, Varvalue(arr));
+                continue;
+            }
+            if (vardecl->getType()->isPointerType()) { // 指针变量
+                Pointer pointer = InitPointer(vardecl);
+                mStack.back().bindDecl(vardecl, Varvalue(pointer));
                 continue;
             }
             if (Expr *initExpr = vardecl->getInit()) {
@@ -135,6 +171,13 @@ void Environment::declref(DeclRefExpr *declref) { // DeclRefExpr是对变量的�
     }
     if (declref->getType()->isFunctionProtoType()) return;
     if (declref->getType()->isArrayType()) {
+        Decl *decl = declref->getFoundDecl();
+        if (is_global_var(decl))
+            mStack.back().bindStmt(declref, Nodevalue(getDeclVal_global(decl)));
+        else
+            mStack.back().bindStmt(declref, Nodevalue(mStack.back().getDeclVal(decl)));
+    }
+    if (declref->getType()->isPointerType()) {
         Decl *decl = declref->getFoundDecl();
         if (is_global_var(decl))
             mStack.back().bindStmt(declref, Nodevalue(getDeclVal_global(decl)));
@@ -189,7 +232,21 @@ bool Environment::_for_(ForStmt *forstmt) {
     Nodevalue val = mStack.back().getStmtVal(cond);
     return val;
 }
-
+void Environment::cstylecast(CStyleCastExpr *expr) {
+    mStack.back().setPC(expr);
+    const Type *Ty = expr->getType().getTypePtr();
+    unsigned ref_level = 0;
+    while (Ty->isPointerType()) {
+        ref_level++;
+        Ty = Ty->getPointeeType().getTypePtr();
+    }
+    assert(ref_level > 0);
+    Expr *subexpr = expr->getSubExpr();
+    Pointer pointer = mStack.back().getStmtVal(subexpr).get_pointer();
+    Pointer new_pointer = Pointer((int*)pointer.get_void_pointer());
+    new_pointer.set_ref_level(ref_level);
+    mStack.back().bindStmt(expr, Nodevalue(new_pointer));
+}
 void Environment::array(ArraySubscriptExpr *arr) {
     mStack.back().setPC(arr);
     Expr *astbase = arr->getBase();
@@ -208,6 +265,19 @@ void Environment::array(ArraySubscriptExpr *arr) {
         mStack.back().bindStmt(arr, Nodevalue(arrnow));
     }
 }
+void Environment::unary_trait(UnaryExprOrTypeTraitExpr *expr) {
+    mStack.back().setPC(expr);
+    assert(expr->getKind() == clang::UETT_SizeOf);
+    if (expr->getTypeOfArgument()->isIntegerType()) {
+        mStack.back().bindStmt(expr, Nodevalue(4));
+        return;
+    }
+    if (expr->getTypeOfArgument()->isPointerType()) {
+        mStack.back().bindStmt(expr, Nodevalue(8));
+        return;
+    }
+    assert(0);
+}
 void Environment::call(CallExpr *callexpr) {
     mStack.back().setPC(callexpr);
     FunctionDecl *callee = callexpr->getDirectCallee();
@@ -221,6 +291,22 @@ void Environment::call(CallExpr *callexpr) {
         Expr *decl = callexpr->getArg(0);
         Nodevalue val = mStack.back().getStmtVal(decl);
         llvm::errs() << val.get_val();
+    }
+    else if (callee == mMalloc) {
+        Nodevalue val = mStack.back().getStmtVal(callexpr->getArg(0));
+        void *mem = malloc(val.get_val());
+        mStack.back().bindStmt(callexpr, Nodevalue(Pointer(mem)));
+    }
+    else if (callee == mFree) {
+        Nodevalue val = mStack.back().getStmtVal(callexpr->getArg(0));
+        Pointer pointer = val.get_pointer();
+        assert(!pointer.is_array_pointer());
+        if (pointer.is_basic_val_pointer())
+            free(pointer.get_basic_value_pointer());
+        if (pointer.is_void_pointer())
+            free(pointer.get_void_pointer());
+        if (pointer.is_pointer_pointer())
+            free(pointer.get_pointer_pointer());
     }
     else {
         /// You could add your code here for Function call Return
@@ -265,4 +351,3 @@ void Environment::finish_call(CallExpr *callexpr) {
         return;
     mStack.back().bindStmt(callexpr, ret_val);
 }
-

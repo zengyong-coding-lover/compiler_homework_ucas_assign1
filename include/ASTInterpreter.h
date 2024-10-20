@@ -21,6 +21,8 @@ public:
     virtual void VisitDeclRefExpr(DeclRefExpr *expr);
     virtual void VisitCastExpr(CastExpr *expr);
     virtual void VisitCallExpr(CallExpr *call);
+    virtual void VisitCStyleCastExpr(CStyleCastExpr *expr);
+    virtual void VisitUnaryExprOrTypeTraitExpr(UnaryExprOrTypeTraitExpr *expr);
     virtual void VisitReturnStmt(ReturnStmt *retstmt);
     virtual void VisitDeclStmt(DeclStmt *declstmt);
     virtual void VisitIfStmt(IfStmt *ifstmt);

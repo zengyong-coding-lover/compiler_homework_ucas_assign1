@@ -26,6 +26,7 @@ public:
 };
 typedef enum {
     Basic_Value_Pointer,
+    Void_Pointer,
     Array_Pointer,
     Pointer_Pointer,
     Null_Pointer,
@@ -33,38 +34,57 @@ typedef enum {
 class Pointer {
 private:
     Pointer_Type pointer_type;
+    unsigned ref_level;
     union {
         Array *arr;
         int *val;
+        void *voi;
         Pointer *pointer;
     };
 
 public:
     Pointer() {
     }
+    Pointer(Pointer_Type type, unsigned ref_level)
+        : pointer_type(type)
+        , ref_level(ref_level) {
+    }
     Pointer(Array *arr)
         : pointer_type(Array_Pointer)
-        , arr(arr) {
+        , arr(arr)
+        , ref_level(1) {
     }
     Pointer(int *val)
         : pointer_type(Basic_Value_Pointer)
-        , val(val) {
+        , val(val)
+        , ref_level(1) {
     }
     Pointer(Pointer *pointer)
         : pointer_type(Pointer_Pointer)
-        , pointer(pointer) {
+        , pointer(pointer)
+        , ref_level(pointer->ref_level + 1) {
+    }
+    Pointer(void *void_)
+        : pointer_type(Void_Pointer)
+        , voi(void_)
+        , ref_level(1) {
     }
     Pointer_Type getType();
     bool is_pointer_pointer();
     bool is_basic_val_pointer();
     bool is_array_pointer();
     bool is_null_pointer();
+    bool is_void_pointer();
     Pointer *get_pointer_pointer();
     int *get_basic_value_pointer();
     Array *get_array_pointer();
+    void *get_void_pointer();
+    unsigned get_ref_level();
     void set_array_pointer(Array *arr);
     void set_basic_value_pointer(int *val);
     void set_pointer_pointer(Pointer *pointer);
+    void set_void_pointer(void *voi);
+    void set_ref_level(unsigned ref_level);
 };
 class Varvalue;
 class Nodevalue {
@@ -119,6 +139,7 @@ private:
     VarType type;
     int val;
     Array arr;
+    Pointer pointer;
 
 public:
     Varvalue() { }
@@ -140,13 +161,21 @@ public:
         : type(Var_Array)
         , arr(arr) {
     }
+    Varvalue(Pointer pointer)
+        : type(Var_Pointer)
+        , pointer(pointer) {
+    }
     VarType get_vartype();
     bool is_basic_value();
     bool is_arr_type();
+    bool is_pointer_type();
     Array &get_arr();
     int get_basic_value();
     int &get_basic_lvalue();
+    Pointer get_pointer();
+    Pointer &get_pointer_lvalue();
     void set_basic_value(int val);
+    void set_pointer(Pointer pointer);
     // int get_array_value(unsigned index);
     // void set_array_value(unsigned index, int val);
 };

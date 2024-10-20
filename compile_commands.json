@@ -1,41 +1,72 @@
 [
- {
-  "directory": "/home/zengyong/compiler_homework/first/ast-interpreter/build",
-  "arguments": [
-   "/bin/c++",
-   "-I/usr/lib/llvm-10/include",
-   "-I/home/zengyong/compiler_homework/first/ast-interpreter/include",
-   "-o",
-   "CMakeFiles/ast-interpreter.dir/src/ASTInterpreter.cpp.o",
-   "-c",
-   "/home/zengyong/compiler_homework/first/ast-interpreter/src/ASTInterpreter.cpp"
-  ],
-  "file": "/home/zengyong/compiler_homework/first/ast-interpreter/src/ASTInterpreter.cpp"
- },
- {
-  "directory": "/home/zengyong/compiler_homework/first/ast-interpreter/build",
-  "arguments": [
-   "/bin/c++",
-   "-I/usr/lib/llvm-10/include",
-   "-I/home/zengyong/compiler_homework/first/ast-interpreter/include",
-   "-o",
-   "CMakeFiles/ast-interpreter.dir/src/Enviroment.cpp.o",
-   "-c",
-   "/home/zengyong/compiler_homework/first/ast-interpreter/src/Enviroment.cpp"
-  ],
-  "file": "/home/zengyong/compiler_homework/first/ast-interpreter/src/Enviroment.cpp"
- },
- {
-  "directory": "/home/zengyong/compiler_homework/first/ast-interpreter/build",
-  "arguments": [
-   "/bin/c++",
-   "-I/usr/lib/llvm-10/include",
-   "-I/home/zengyong/compiler_homework/first/ast-interpreter/include",
-   "-o",
-   "CMakeFiles/ast-interpreter.dir/src/support.cpp.o",
-   "-c",
-   "/home/zengyong/compiler_homework/first/ast-interpreter/src/support.cpp"
-  ],
-  "file": "/home/zengyong/compiler_homework/first/ast-interpreter/src/support.cpp"
- }
+  {
+    "directory": "/home/zengyong/compiler_homework/first/ast-interpreter/build",
+    "arguments": [
+      "/bin/c++",
+      "-I/usr/lib/llvm-10/include",
+      "-I/home/zengyong/compiler_homework/first/ast-interpreter/include",
+      "-g",
+      "-o",
+      "CMakeFiles/ast-interpreter.dir/src/ASTInterpreter.cpp.o",
+      "-c",
+      "/home/zengyong/compiler_homework/first/ast-interpreter/src/ASTInterpreter.cpp"
+    ],
+    "file": "/home/zengyong/compiler_homework/first/ast-interpreter/src/ASTInterpreter.cpp"
+  },
+  {
+    "directory": "/home/zengyong/compiler_homework/first/ast-interpreter/build",
+    "arguments": [
+      "/bin/c++",
+      "-I/usr/lib/llvm-10/include",
+      "-I/home/zengyong/compiler_homework/first/ast-interpreter/include",
+      "-g",
+      "-o",
+      "CMakeFiles/ast-interpreter.dir/src/Enviroment.cpp.o",
+      "-c",
+      "/home/zengyong/compiler_homework/first/ast-interpreter/src/Enviroment.cpp"
+    ],
+    "file": "/home/zengyong/compiler_homework/first/ast-interpreter/src/Enviroment.cpp"
+  },
+  {
+    "directory": "/home/zengyong/compiler_homework/first/ast-interpreter/build",
+    "arguments": [
+      "/bin/c++",
+      "-I/usr/lib/llvm-10/include",
+      "-I/home/zengyong/compiler_homework/first/ast-interpreter/include",
+      "-g",
+      "-o",
+      "CMakeFiles/ast-interpreter.dir/src/Support.cpp.o",
+      "-c",
+      "/home/zengyong/compiler_homework/first/ast-interpreter/src/Support.cpp"
+    ],
+    "file": "/home/zengyong/compiler_homework/first/ast-interpreter/src/Support.cpp"
+  },
+  {
+    "directory": "/home/zengyong/compiler_homework/first/ast-interpreter/build",
+    "arguments": [
+      "/bin/c++",
+      "-I/usr/lib/llvm-10/include",
+      "-I/home/zengyong/compiler_homework/first/ast-interpreter/include",
+      "-g",
+      "-o",
+      "CMakeFiles/ast-interpreter.dir/src/Value.cpp.o",
+      "-c",
+      "/home/zengyong/compiler_homework/first/ast-interpreter/src/Value.cpp"
+    ],
+    "file": "/home/zengyong/compiler_homework/first/ast-interpreter/src/Value.cpp"
+  },
+  {
+    "directory": "/home/zengyong/compiler_homework/first/ast-interpreter/build",
+    "arguments": [
+      "/bin/c++",
+      "-I/usr/lib/llvm-10/include",
+      "-I/home/zengyong/compiler_homework/first/ast-interpreter/include",
+      "-g",
+      "-o",
+      "CMakeFiles/ast-interpreter.dir/src/main.cpp.o",
+      "-c",
+      "/home/zengyong/compiler_homework/first/ast-interpreter/src/main.cpp"
+    ],
+    "file": "/home/zengyong/compiler_homework/first/ast-interpreter/src/main.cpp"
+  }
 ]

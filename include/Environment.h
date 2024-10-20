@@ -89,7 +89,9 @@ public:
     bool _while_(WhileStmt *whilestmt);
     bool _for_(ForStmt *forstmt);
 
+    void cstylecast(CStyleCastExpr* expr);
     void array(ArraySubscriptExpr *arr);
+    void unary_trait(UnaryExprOrTypeTraitExpr *expr);
     /// !TODO Support Function Call
     void call(CallExpr *callexpr);
 

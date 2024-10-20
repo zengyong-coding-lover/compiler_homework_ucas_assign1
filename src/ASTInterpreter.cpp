@@ -54,6 +54,14 @@ void InterpreterVisitor::VisitCastExpr(CastExpr *expr) {
     VisitStmt(expr);
     mEnv->cast(expr);
 }
+void InterpreterVisitor::VisitCStyleCastExpr(CStyleCastExpr *expr) {
+    VisitStmt(expr);
+    mEnv->cstylecast(expr);
+}
+void InterpreterVisitor::VisitUnaryExprOrTypeTraitExpr(UnaryExprOrTypeTraitExpr *expr) {
+    VisitStmt(expr);
+    mEnv->unary_trait(expr);
+}
 void InterpreterVisitor::VisitCallExpr(CallExpr *call) {
     VisitStmt(call);
     mEnv->call(call);
