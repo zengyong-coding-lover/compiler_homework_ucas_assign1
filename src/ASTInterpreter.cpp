@@ -104,7 +104,8 @@ bool InterpreterVisitor::VisitCallExpr(CallExpr *call) {
 
     FunctionDecl *callee = call->getDirectCallee();
     if (Stmt *body = callee->getBody()) {
-        assert(!VisitStmt(body)); // 先默认函数调用一定有return
+        // assert(!VisitStmt(body))
+        VisitStmt(body);
     }
 
     mEnv->finish_call(call);

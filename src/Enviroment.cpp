@@ -374,6 +374,7 @@ void Environment::call(CallExpr *callexpr) {
     else {
         /// You could add your code here for Function call Return
         // 准备参数
+        callee = callee->getDefinition();
         unsigned current_frame_index = mStack.size() - 1;
         ret_val.set_val(0);
         mStack.push_back(StackFrame());
@@ -401,7 +402,6 @@ void Environment::ret(ReturnStmt *retstmt) {
     Expr *expr = retstmt->getRetValue();
 
     ret_val = mStack.back().getStmtVal(expr);
-    mStack.pop_back();
 }
 
 void Environment::finish_call(CallExpr *callexpr) {
@@ -410,6 +410,7 @@ void Environment::finish_call(CallExpr *callexpr) {
     if (callee == mOutput) return;
     if (callee == mFree) return;
     if (callee == mMalloc) return;
+    mStack.pop_back(); // 不想在每个函数后加return 语句了，直接这边pop
     if (callee->getReturnType()->isVoidType())
         return;
     mStack.back().bindStmt(callexpr, ret_val);
