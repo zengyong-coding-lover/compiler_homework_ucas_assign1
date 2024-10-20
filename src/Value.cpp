@@ -9,22 +9,40 @@ Array &Array::operator[](int index) {
 bool Array::get_is_element() {
     return is_element;
 }
-
+bool Array::get_is_pointer() {
+    assert(is_element);
+    return is_pointer;
+}
 int Array::get_value() {
     assert(is_element);
+    assert(!is_pointer);
     return val;
 }
-
+Pointer Array::get_pointer() {
+    assert(is_element);
+    assert(is_pointer);
+    return pointer;
+}
 int &Array::get_lvalue() {
     assert(is_element);
+    assert(!is_pointer);
     return val;
 }
-
+Pointer &Array::get_pointer_lval() {
+    assert(is_element);
+    assert(is_pointer);
+    return pointer;
+}
 void Array::operator=(int val) {
     assert(is_element);
+    assert(!is_pointer);
     this->val = val;
 }
-
+void Array::operator=(Pointer pointer) {
+    assert(is_element);
+    assert(is_pointer);
+    this->pointer = pointer;
+}
 VarType Varvalue::get_vartype() {
     return type;
 }

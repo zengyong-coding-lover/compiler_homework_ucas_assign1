@@ -134,19 +134,7 @@ void Environment::unop(UnaryOperator *uop) {
     int re = cal_unary(val.get_val(), uop->getOpcode());
     mStack.back().bindStmt(uop, Nodevalue(re));
 }
-
-static Array InitArr(const clang::ArrayType *arrType) {
-    if (!arrType)
-        return Array(0);
-    const clang::ConstantArrayType *constArr = llvm::dyn_cast<clang::ConstantArrayType>(arrType);
-    unsigned size = constArr->getSize().getZExtValue();
-    const clang::ArrayType *nextArrType = constArr->getElementType()->getAsArrayTypeUnsafe();
-    return Array(size, InitArr(nextArrType));
-}
-
-static Pointer InitPointer(VarDecl *decl) {
-    const Type *Ty = decl->getType().getTypePtr();
-
+static Pointer Ty_Pointer(const Type *Ty) {
     unsigned ref_level = 0;
     while (Ty->isPointerType()) {
         ref_level++;
@@ -156,6 +144,23 @@ static Pointer InitPointer(VarDecl *decl) {
         return Pointer(Basic_Value_Pointer, ref_level);
     else
         return Pointer(Pointer_Pointer, ref_level);
+}
+static Array InitArr(const Type *Ty) {
+    if (const clang::ArrayType *arrType = Ty->getAsArrayTypeUnsafe()) {
+        const clang::ConstantArrayType *constArr = llvm::dyn_cast<clang::ConstantArrayType>(arrType);
+        unsigned size = constArr->getSize().getZExtValue();
+        const Type *nextType = constArr->getElementType().getTypePtr();
+        return Array(size, InitArr(nextType));
+    }
+    if (Ty->isPointerType())
+        return Array(Ty_Pointer(Ty));
+    else
+        return Array(0);
+}
+
+static Pointer InitPointer(VarDecl *decl) {
+    const Type *Ty = decl->getType().getTypePtr();
+    return Ty_Pointer(Ty);
 }
 
 void Environment::paren(ParenExpr *parent) {
@@ -171,7 +176,7 @@ void Environment::decl(DeclStmt *declstmt) {
         Decl *decl = *it;
         if (VarDecl *vardecl = dyn_cast<VarDecl>(decl)) {
             if (const clang::ArrayType *arrType = vardecl->getType()->getAsArrayTypeUnsafe()) {
-                Array arr = InitArr(arrType);
+                Array arr = InitArr(vardecl->getType().getTypePtr());
                 mStack.back().bindDecl(vardecl, Varvalue(arr));
                 continue;
             }
@@ -308,8 +313,15 @@ void Environment::array(ArraySubscriptExpr *arr) {
     unsigned index = nodeindex.get_val();
     Array *arrnow = &((*arrbase)[index]);
     if (arrnow->get_is_element()) { // 索引到最后一个变成左值
-        Nodevalue nodenow = Nodevalue(arrnow->get_value());
-        nodenow.set_lval_source(Pointer(&arrnow->get_lvalue()));
+        Nodevalue nodenow;
+        if (arrnow->get_is_pointer()) {
+            nodenow = Nodevalue(arrnow->get_pointer());
+            nodenow.set_lval_source(Pointer(&(arrnow->get_pointer_lval())));
+        }
+        else {
+            nodenow = Nodevalue(arrnow->get_value());
+            nodenow.set_lval_source(Pointer(&(arrnow->get_lvalue())));
+        }
         mStack.back().bindStmt(arr, nodenow);
     }
     else {

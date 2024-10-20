@@ -2,28 +2,6 @@
 #define __VAR__
 #include <cassert>
 #include <vector>
-class Array {
-private:
-    std::vector<Array> arr;
-    int val;
-    bool is_element; // 是否是元素
-public:
-    Array() { }
-    Array(int val) {
-        is_element = true;
-        this->val = val;
-    }
-    Array(unsigned size, Array arr) {
-        is_element = false;
-        for (int i = 0; i < size; i++)
-            this->arr.push_back(arr);
-    }
-    bool get_is_element();
-    int get_value();
-    int &get_lvalue();
-    Array &operator[](int index);
-    void operator=(int val);
-};
 typedef enum {
     Basic_Value_Pointer,
     Void_Pointer,
@@ -31,6 +9,7 @@ typedef enum {
     Pointer_Pointer,
     Null_Pointer,
 } Pointer_Type;
+class Array;
 class Pointer {
 private:
     Pointer_Type pointer_type;
@@ -85,6 +64,43 @@ public:
     void set_pointer_pointer(Pointer *pointer);
     void set_void_pointer(void *voi);
     void set_ref_level(unsigned ref_level);
+};
+class Array {
+private:
+    std::vector<Array> arr;
+    union {
+        int val;
+        Pointer pointer;
+    };
+    bool is_element; // 是否是元素
+    bool is_pointer;
+
+public:
+    Array() { }
+    Array(int val) {
+        is_element = true;
+        is_pointer = false;
+        this->val = val;
+    }
+    Array(Pointer pointer) {
+        is_element = true;
+        is_pointer = true;
+        this->pointer = pointer;
+    }
+    Array(unsigned size, Array arr) {
+        is_element = false;
+        for (int i = 0; i < size; i++)
+            this->arr.push_back(arr);
+    }
+    bool get_is_element();
+    bool get_is_pointer();
+    int get_value();
+    Pointer get_pointer();
+    int &get_lvalue();
+    Pointer &get_pointer_lval();
+    Array &operator[](int index);
+    void operator=(int val);
+    void operator=(Pointer pointer);
 };
 class Varvalue;
 class Nodevalue {
